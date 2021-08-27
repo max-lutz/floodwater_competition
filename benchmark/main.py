@@ -1,6 +1,4 @@
 import sys
-from pathlib import Path
-
 from loguru import logger
 import numpy as np
 import typer
@@ -42,7 +40,7 @@ def make_predictions(chip_id: str, model):
 
         output_prediction = model.predict(img)[0,:, :, 0]
 
-        output_prediction = (output_prediction > 0.5).astype(int)
+        output_prediction = ((output_prediction > 0.5) * 1).astype(np.uint8)
 
         logger.info(output_prediction.shape)
 
@@ -51,7 +49,7 @@ def make_predictions(chip_id: str, model):
             f"test_features not found for {chip_id}, predicting all zeros; did you download your"
             f"training data into `runtime/data/test_features` so you can test your code?"
         )
-        output_prediction = np.zeros(shape=(512, 512), dtype=np.uint8)
+        output_prediction = np.zeros(shape=(512, 512))
     return output_prediction
 
 
