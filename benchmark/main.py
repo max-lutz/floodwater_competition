@@ -4,7 +4,7 @@ from pathlib import Path
 from loguru import logger
 import numpy as np
 import typer
-from tifffile import imwrite, imread
+from tifffile import imwrite
 from tqdm import tqdm
 from os import listdir
 from os.path import isfile, join
@@ -13,12 +13,6 @@ import os
 import tensorflow as tf
 from tensorflow import keras
 import rasterio
-
-ROOT_DIRECTORY = Path("/codeexecution")
-SUBMISSION_DIRECTORY = ROOT_DIRECTORY / "submission"
-DATA_DIRECTORY = ROOT_DIRECTORY / "data"
-INPUT_IMAGES_DIRECTORY = DATA_DIRECTORY / "test_features"
-ASSETS_DIRECTORY = ROOT_DIRECTORY / "assets"
 
 
 def make_predictions(chip_id: str, model):
@@ -47,6 +41,8 @@ def make_predictions(chip_id: str, model):
         #logger.info(config["layers"][0]["config"]["batch_input_shape"]) # returns a tuple of width, height and channels
 
         output_prediction = model.predict(img)[0,:, :, 0]
+
+        output_prediction = (output_prediction > 0.5).astype(int)
 
         logger.info(output_prediction.shape)
 
@@ -83,7 +79,7 @@ def main():
     #logger.info(model.summary())
 
 
-    logger.info("Finding chip IDs in ", ROOT_DIRECTORY)
+    logger.info("Finding chip IDs in ")
     chip_ids = get_expected_chip_ids()
     if not chip_ids:
         typer.echo("No input images found!")
