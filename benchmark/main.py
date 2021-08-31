@@ -73,7 +73,7 @@ def main():
     for each input file, make a corresponding output file using the `make_predictions` function
     """
     logger.info("Loading model")
-    model = keras.models.load_model(os.path.join(os.getcwd(), 'assets', 'model_floodwater_unet_basic.h5'))
+    model = keras.models.load_model(os.path.join(os.getcwd(), 'assets', 'model_floodwater_unet_augm.h5'))
     #logger.info(model.summary())
 
 
