@@ -12,6 +12,22 @@ import tensorflow as tf
 from tensorflow import keras
 import rasterio
 
+import keras.backend as K
+
+
+# https://gist.github.com/wassname/7793e2058c5c9dacb5212c0ac0b18a8a
+def DiceLoss(y_true, y_pred, smooth=1):
+    """
+    Dice = (2*|X & Y|)/ (|X|+ |Y|)
+         =  2*sum(|A*B|)/(sum(A^2)+sum(B^2))
+    ref: https://arxiv.org/pdf/1606.04797v1.pdf
+    """
+    # y_true = y_true.astype('float32')
+    # y_pred = y_pred.astype('float32')
+
+    intersection = K.sum(K.abs(y_true * y_pred), axis=-1)
+    return 1-((2. * intersection + smooth) / (K.sum(K.square(y_true),-1) + K.sum(K.square(y_pred),-1) + smooth))
+
 
 def make_predictions(chip_id: str, model):
     """
@@ -73,7 +89,9 @@ def main():
     for each input file, make a corresponding output file using the `make_predictions` function
     """
     logger.info("Loading model")
-    model = keras.models.load_model(os.path.join(os.getcwd(), 'assets', 'model_floodwater_unet_augm.h5'))
+    custom_objects = {"DiceLoss": DiceLoss}
+    with keras.utils.custom_object_scope(custom_objects):
+        model = keras.models.load_model(os.path.join(os.getcwd(), 'assets', 'model_floodwater_unet_augm_diceloss.h5'))
     #logger.info(model.summary())
 
 
