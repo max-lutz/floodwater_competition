@@ -35,30 +35,37 @@ def make_predictions(chip_id: str, model):
     """
     #logger.info(os.path.join(os.getcwd(), 'data', 'test_features', chip_id+'_vh.tif'))
     try:
+
+        dirs = ["test_features", "test_features", "nasadem", "jrc_change", "jrc_extent", "jrc_seasonality", "jrc_occurrence", "jrc_recurrence", "jrc_transitions"]
+        endings = ["_vv.tif", "_vh.tif", ".tif", ".tif", ".tif", ".tif", ".tif", ".tif", ".tif"]
+        
+        arrays = []
+
         #os.path.abspath()
-        path_vh = os.path.join(os.getcwd(), 'data', 'test_features', chip_id+'_vh.tif')
-        path_vv = os.path.join(os.getcwd(), 'data', 'test_features', chip_id+'_vv.tif')
-        # arr_vh = imread(INPUT_IMAGES_DIRECTORY / f"{chip_id}_vh.tif")
-        # arr_vv = imread(INPUT_IMAGES_DIRECTORY / f"{chip_id}_vv.tif")
+        for i in range(9):
+            path = os.path.join(os.getcwd(), 'data', dirs[i], chip_id + endings[i])
+
+            #print(path)
+            #load image from path
+            with rasterio.open(path) as img:
         
-        #load image from path
-        with rasterio.open(path_vh) as vv:
-            arr_vh = vv.read(1)
-        with rasterio.open(path_vv) as vh:
-            arr_vv = vh.read(1)
+                if(i < 2):
+                    arrays.append(np.uint8(np.clip(img.read(1), -30, 0)*(-8.4)))
+                elif(i == 2):
+                    arrays.append(np.uint8(np.clip(img.read(1), 0, 255)))
+                else:
+                    arrays.append(img.read(1))
         
-        img = np.array([np.stack([arr_vv, arr_vh], axis=-1)])
+        images = np.array([np.stack(arrays, axis=-1)])
 
         #logger.info(img.shape)
 
         #config = model.get_config() # Returns pretty much every information about your model
         #logger.info(config["layers"][0]["config"]["batch_input_shape"]) # returns a tuple of width, height and channels
 
-        output_prediction = model.predict(img)[0,:, :, 0]
-
+        output_prediction = model.predict(images)[0,:, :, 0]
         output_prediction = ((output_prediction > 0.5) * 1).astype(np.uint8)
-
-        logger.info(output_prediction.shape)
+        #logger.info(output_prediction.shape)
 
     except:
         logger.warning(
@@ -91,7 +98,7 @@ def main():
     logger.info("Loading model")
     custom_objects = {"DiceLoss": DiceLoss}
     with keras.utils.custom_object_scope(custom_objects):
-        model = keras.models.load_model(os.path.join(os.getcwd(), 'assets', 'model_floodwater_unet_augm_diceloss.h5'))
+        model = keras.models.load_model(os.path.join(os.getcwd(), 'assets', 'model_floodwater_unet_pc_augm_diceloss.h5'))
     #logger.info(model.summary())
 
 
