@@ -14,22 +14,42 @@ import rasterio
 
 import keras.backend as K
 
+def IOU_coef(y_true, y_pred):
+  y_true_f = K.flatten(y_true)
+  y_pred_f = K.flatten(y_pred)
+  intersection = K.sum(y_true_f * y_pred_f)
+  return (intersection + 1.0) / (K.sum(y_true_f) + K.sum(y_pred_f) - intersection + 1.0)
+
+# https://www.youtube.com/watch?v=BNPW1mYbgS4
+def IOULoss(y_true, y_pred):
+    return -IOU_coef(y_true, y_pred)
 
 # https://gist.github.com/wassname/7793e2058c5c9dacb5212c0ac0b18a8a
+# def DiceLoss(y_true, y_pred, smooth=1):
+#     """
+#     Dice = (2*|X & Y|)/ (|X|+ |Y|)
+#          =  2*sum(|A*B|)/(sum(A^2)+sum(B^2))
+#     ref: https://arxiv.org/pdf/1606.04797v1.pdf
+#     """
+#     # y_true = y_true.astype('float32')
+#     # y_pred = y_pred.astype('float32')
+
+#     intersection = K.sum(K.abs(y_true * y_pred), axis=-1)
+#     return 1-((2. * intersection + smooth) / (K.sum(K.square(y_true),-1) + K.sum(K.square(y_pred),-1) + smooth))
+
+# https://gist.github.com/wassname/7793e2058c5c9dacb5212c0ac0b18a8a
+def DiceLoss_with_square(y_true, y_pred, smooth=1):
+  y_true_f = K.flatten(y_true)
+  y_pred_f = K.flatten(y_pred)
+  intersection = K.sum(K.abs(y_true_f * y_pred_f))
+  return 1-((2. * intersection + smooth) / (K.sum(K.square(y_true_f),-1) + K.sum(K.square(y_pred_f),-1) + smooth))
+
 def DiceLoss(y_true, y_pred, smooth=1):
-    """
-    Dice = (2*|X & Y|)/ (|X|+ |Y|)
-         =  2*sum(|A*B|)/(sum(A^2)+sum(B^2))
-    ref: https://arxiv.org/pdf/1606.04797v1.pdf
-    """
-    # y_true = y_true.astype('float32')
-    # y_pred = y_pred.astype('float32')
-
-    intersection = K.sum(K.abs(y_true * y_pred), axis=-1)
-    return 1-((2. * intersection + smooth) / (K.sum(K.square(y_true),-1) + K.sum(K.square(y_pred),-1) + smooth))
+  intersection = K.sum(y_true * y_pred)
+  return 1-((2. * intersection + smooth) / (K.sum(y_true) + K.sum(y_pred) + smooth))
 
 
-def make_predictions(chip_id: str, model):
+def make_predictions(chip_id: str, models):
     """
     Given an image ID, read in the appropriate files and predict a mask of all ones or zeros
     """
@@ -62,9 +82,14 @@ def make_predictions(chip_id: str, model):
 
         #config = model.get_config() # Returns pretty much every information about your model
         #logger.info(config["layers"][0]["config"]["batch_input_shape"]) # returns a tuple of width, height and channels
+        output_predictions = []
 
-        output_prediction = model.predict(images)[0,:, :, 0]
+        for model in models:
+            output_predictions.append(model.predict(images)[0,:, :, 0])
+        
+        output_prediction =  np.mean(output_predictions, axis=0)
         output_prediction = ((output_prediction > 0.5) * 1).astype(np.uint8)
+
         #logger.info(output_prediction.shape)
 
     except:
@@ -96,9 +121,14 @@ def main():
     for each input file, make a corresponding output file using the `make_predictions` function
     """
     logger.info("Loading model")
-    custom_objects = {"DiceLoss": DiceLoss}
+    custom_objects = {"DiceLoss": DiceLoss, "IoULoss": IOULoss, "IOU_coef": IOU_coef}
+    models = []
     with keras.utils.custom_object_scope(custom_objects):
-        model = keras.models.load_model(os.path.join(os.getcwd(), 'assets', 'model_floodwater_unet_pc_augm_diceloss.h5'))
+        models.append(keras.models.load_model(os.path.join(os.getcwd(), 'assets', 'model_floodwater_unet_pc_augm_diceloss_2.h5')))
+        #models.append(keras.models.load_model(os.path.join(os.getcwd(), 'assets', 'model_floodwater_unet_pc_augm_BCEloss.h5')))
+        models.append(keras.models.load_model(os.path.join(os.getcwd(), 'assets', 'model_floodwater_unet_pc_augm_diceloss.h5')))
+        #models.append(keras.models.load_model(os.path.join(os.getcwd(), 'assets', 'model_floodwater_unet_pc_augm_diceloss_without_square.h5')))
+        
     #logger.info(model.summary())
 
 
@@ -113,7 +143,7 @@ def main():
         # figure out where this prediction data should go
         output_path = os.path.join(os.getcwd(), 'submission', chip_id+'.tif')
         # make our predictions! (you should edit `make_predictions` to do something useful)
-        output_data = make_predictions(chip_id, model)
+        output_data = make_predictions(chip_id, models)
         imwrite(output_path, output_data, dtype=np.uint8)
     logger.success(f"... done")
 
