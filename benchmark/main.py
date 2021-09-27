@@ -115,7 +115,7 @@ def main():
         models.append(keras.models.load_model(os.path.join(os.getcwd(), 'assets', 'model_floodwater_unet_pc_augm_diceloss_2.h5')))
         models.append(keras.models.load_model(os.path.join(os.getcwd(), 'assets', 'model_floodwater_unet_pc_augm_diceloss_3.h5')))
         models.append(keras.models.load_model(os.path.join(os.getcwd(), 'assets', 'model_floodwater_unet_pc_augm_diceloss_4.h5')))
-        #models.append(keras.models.load_model(os.path.join(os.getcwd(), 'assets', 'model_floodwater_unet_pc_augm_diceloss_5.h5')))
+        models.append(keras.models.load_model(os.path.join(os.getcwd(), 'assets', 'model_floodwater_unet_pc_augm_diceloss_5.h5')))
         
     #logger.info(model.summary())
 
