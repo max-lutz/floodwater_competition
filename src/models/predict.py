@@ -93,7 +93,7 @@ def get_expected_chip_ids():
     """
     mypath = os.path.join(parent(parent(os.getcwd())), 'data', 'to_predict', 'test_features')
     files = [f for f in listdir(mypath) if isfile(join(mypath, f))]
-    
+    files.remove(".gitkeep")
     
     #logger.info(files)
     # images are named something like abc12.tif, we only want the abc12 part
