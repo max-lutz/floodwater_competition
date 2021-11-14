@@ -22,12 +22,12 @@ They should not affect the code.
 
 1. Add training data in the folder data/raw/train_features, this training data should be in the same format as the one given during the competition:
 
-    |-- data
-        |-- raw
-            |-- train_features
-                |-- train_features                          <-- folder containing vv and vh .tif files
-                |-- train_labels                            <-- folder containing the corresponding .tif label data
-                |-- flood_training_metadata.csv             <-- csv file containing the metadata
+    |-- data  
+        |-- raw  
+            |-- train_features  
+                |-- train_features                          <-- folder containing vv and vh .tif files  
+                |-- train_labels                            <-- folder containing the corresponding .tif label data  
+                |-- flood_training_metadata.csv             <-- csv file containing the metadata  
 
 
 2. Load the data from the planetary computer use the /src/data/load_pc_train_data.ipynb notebook
